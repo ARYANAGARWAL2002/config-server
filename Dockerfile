@@ -1,5 +1,5 @@
 # Stage 1: Build the application using a Maven image with Java 17
-FROM maven:3.9.6-eclipse-temurin-17-jammy AS build
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 
 # Set the working directory in the container
 WORKDIR /app
