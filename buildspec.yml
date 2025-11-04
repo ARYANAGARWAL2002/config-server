@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  variables:
+    # -----------------------------------------------------------------
+    # This should be your AWS region (eu-north-1)
+    AWS_REGION: "eu-north-1"
+    # -----------------------------------------------------------------
+    IMAGE_NAME: "config-server"
+    IMAGE_TAG: "latest"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Getting AWS Account ID"
+      - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - if [ -z "$AWS_ACCOUNT_ID" ]; then echo "AWS_ACCOUNT_ID is not set. Exiting."; exit 1; fi
+      - echo "Logging in to Amazon ECR"
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - export ECR_REPO_PREFIX="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+  build:
+    commands:
+      - echo "Building $IMAGE_NAME..."
+      - set -e
+      - docker build -t $ECR_REPO_PREFIX/$IMAGE_NAME:$IMAGE_TAG .
+      - echo "Pushing $IMAGE_NAME to ECR..."
+      - docker push $ECR_REPO_PREFIX/$IMAGE_NAME:$IMAGE_TAG
+      - echo "Image built and pushed."
